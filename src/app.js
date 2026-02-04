@@ -5,6 +5,10 @@ const PORT = 3000;
 
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.send('LMS Backend running! Use /health for status.');
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
