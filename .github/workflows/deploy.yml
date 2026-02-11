@@ -38,12 +38,18 @@ jobs:
           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/lms-backend-demo:demo
           
           # stop old container if running
-          sudo docker stop lms-backend || true
-          sudo docker rm lms-backend || true
-          
+          if [ $(sudo docker ps -q -f name=lms-backend) ]; then
+            sudo docker stop lms-backend
+            sudo docker rm lms-backend
+          fi
+    
           # run new container
           sudo docker run -d \
               --name lms-backend \
               --restart unless-stopped \
               -p 80:3000 \
+              -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e RDS_ENDPOINT="${{ secrets.RDS_ENDPOINT }}" \
+              -e DB_NAME="${{ secrets.DB_NAME }}" \
               ${{ secrets.DOCKER_USERNAME }}/lms-backend-demo:demo
