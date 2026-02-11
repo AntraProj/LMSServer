@@ -1,16 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client"
+  output     = "../generated/prisma"
+  engineType = "client"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-// RBAC
-model role_permissions {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  permissions Int[]
-  users       users[]
-}
+
+
