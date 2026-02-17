@@ -1,0 +1,25 @@
+name: Dev Code Checks
+
+on:
+  workflow_dispatch: # Only check on dispatch for now
+    branches:
+      - dev
+
+jobs:
+  run-code-checks:
+    runs-on: unbuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run ESLint
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
