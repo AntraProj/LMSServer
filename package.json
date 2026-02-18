@@ -32,5 +32,8 @@
   "bugs": {
     "url": "https://github.com/AntraProj/LMSServer/issues"
   },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "homepage": "https://github.com/AntraProj/LMSServer#readme"
 }
