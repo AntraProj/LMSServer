@@ -1,16 +1,8 @@
-require("dotenv").config();
-const {
-  PrismaClient,
-  BoardType,
-  SprintStatus,
-  TicketAction,
-} = require("@prisma/client");
-const { Pool } = require("pg");
-const { PrismaPg } = require("@prisma/adapter-pg");
+import 'dotenv/config';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient, BoardType, SprintStatus, TicketAction } from '@prisma/client';
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
