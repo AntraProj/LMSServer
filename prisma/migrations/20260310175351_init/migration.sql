@@ -32,7 +32,7 @@ CREATE TABLE "roles" (
 -- CreateTable
 CREATE TABLE "resources" (
     "id" SERIAL NOT NULL,
-    "name" TEXT,
+    "name" TEXT NOT NULL,
 
     CONSTRAINT "resources_pkey" PRIMARY KEY ("id")
 );
@@ -49,7 +49,9 @@ CREATE TABLE "role_permissions" (
 CREATE TABLE "projects" (
     "id" SERIAL NOT NULL,
     "key" TEXT NOT NULL,
-    "name" TEXT,
+    "name" TEXT NOT NULL,
+    "next_ticket_number" INTEGER NOT NULL DEFAULT 1,
+    "workflow_id" INTEGER,
     "created_by" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -63,6 +65,26 @@ CREATE TABLE "project_users" (
     "joined_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "project_users_pkey" PRIMARY KEY ("user_id","project_id")
+);
+
+-- CreateTable
+CREATE TABLE "workflows" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "created_by" INTEGER,
+    "is_standard" BOOLEAN NOT NULL DEFAULT false,
+
+    CONSTRAINT "workflows_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "workflow_columns" (
+    "id" SERIAL NOT NULL,
+    "workflow_id" INTEGER NOT NULL,
+    "column_name" TEXT NOT NULL,
+    "position" INTEGER NOT NULL,
+
+    CONSTRAINT "workflow_columns_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -80,7 +102,7 @@ CREATE TABLE "boards" (
 CREATE TABLE "board_columns" (
     "id" SERIAL NOT NULL,
     "board_id" INTEGER NOT NULL,
-    "name" TEXT NOT NULL,
+    "column_name" TEXT NOT NULL,
     "position" INTEGER NOT NULL,
 
     CONSTRAINT "board_columns_pkey" PRIMARY KEY ("id")
@@ -90,7 +112,7 @@ CREATE TABLE "board_columns" (
 CREATE TABLE "sprints" (
     "id" SERIAL NOT NULL,
     "board_id" INTEGER NOT NULL,
-    "name" TEXT,
+    "name" TEXT NOT NULL,
     "status" "SprintStatus" NOT NULL,
     "start_date" TIMESTAMP(3),
     "end_date" TIMESTAMP(3),
@@ -189,7 +211,7 @@ CREATE TABLE "attachments" (
     "uploaded_by" INTEGER NOT NULL,
     "file_url" TEXT NOT NULL,
     "file_name" TEXT NOT NULL,
-    "file_size" INTEGER NOT NULL,
+    "file_size" BIGINT NOT NULL,
     "mime_type" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -203,10 +225,22 @@ CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 CREATE UNIQUE INDEX "roles_name_key" ON "roles"("name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "resources_name_key" ON "resources"("name");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "projects_key_key" ON "projects"("key");
 
 -- CreateIndex
 CREATE INDEX "project_users_project_id_idx" ON "project_users"("project_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "workflows_name_created_by_key" ON "workflows"("name", "created_by");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "workflow_columns_workflow_id_position_key" ON "workflow_columns"("workflow_id", "position");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "workflow_columns_workflow_id_column_name_key" ON "workflow_columns"("workflow_id", "column_name");
 
 -- CreateIndex
 CREATE INDEX "boards_project_id_idx" ON "boards"("project_id");
@@ -215,10 +249,16 @@ CREATE INDEX "boards_project_id_idx" ON "boards"("project_id");
 CREATE UNIQUE INDEX "board_columns_board_id_position_key" ON "board_columns"("board_id", "position");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "board_columns_board_id_name_key" ON "board_columns"("board_id", "name");
+CREATE UNIQUE INDEX "board_columns_board_id_column_name_key" ON "board_columns"("board_id", "column_name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "board_columns_id_board_id_key" ON "board_columns"("id", "board_id");
 
 -- CreateIndex
 CREATE INDEX "sprints_board_id_idx" ON "sprints"("board_id");
+
+-- CreateIndex
+CREATE INDEX "sprints_board_id_status_idx" ON "sprints"("board_id", "status");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ticket_types_name_key" ON "ticket_types"("name");
@@ -245,16 +285,25 @@ CREATE INDEX "tickets_reporter_id_idx" ON "tickets"("reporter_id");
 CREATE INDEX "tickets_parent_ticket_id_idx" ON "tickets"("parent_ticket_id");
 
 -- CreateIndex
+CREATE INDEX "tickets_board_id_status_id_idx" ON "tickets"("board_id", "status_id");
+
+-- CreateIndex
+CREATE INDEX "tickets_project_id_status_id_idx" ON "tickets"("project_id", "status_id");
+
+-- CreateIndex
+CREATE INDEX "tickets_board_id_sprint_id_idx" ON "tickets"("board_id", "sprint_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "tickets_project_id_key_number_key" ON "tickets"("project_id", "key_number");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "labels_name_key" ON "labels"("name");
 
 -- CreateIndex
-CREATE INDEX "ticket_comments_ticket_id_idx" ON "ticket_comments"("ticket_id");
+CREATE INDEX "ticket_comments_ticket_id_created_at_idx" ON "ticket_comments"("ticket_id", "created_at");
 
 -- CreateIndex
-CREATE INDEX "ticket_history_ticket_id_idx" ON "ticket_history"("ticket_id");
+CREATE INDEX "ticket_history_ticket_id_created_at_idx" ON "ticket_history"("ticket_id", "created_at");
 
 -- CreateIndex
 CREATE INDEX "attachments_ticket_id_idx" ON "attachments"("ticket_id");
@@ -272,10 +321,19 @@ ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_resource_id_fkey
 ALTER TABLE "projects" ADD CONSTRAINT "projects_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "projects" ADD CONSTRAINT "projects_workflow_id_fkey" FOREIGN KEY ("workflow_id") REFERENCES "workflows"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "project_users" ADD CONSTRAINT "project_users_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "project_users" ADD CONSTRAINT "project_users_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "workflows" ADD CONSTRAINT "workflows_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "workflow_columns" ADD CONSTRAINT "workflow_columns_workflow_id_fkey" FOREIGN KEY ("workflow_id") REFERENCES "workflows"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "boards" ADD CONSTRAINT "boards_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -302,7 +360,7 @@ ALTER TABLE "tickets" ADD CONSTRAINT "tickets_type_id_fkey" FOREIGN KEY ("type_i
 ALTER TABLE "tickets" ADD CONSTRAINT "tickets_priority_id_fkey" FOREIGN KEY ("priority_id") REFERENCES "priorities"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tickets" ADD CONSTRAINT "tickets_status_id_fkey" FOREIGN KEY ("status_id") REFERENCES "board_columns"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tickets" ADD CONSTRAINT "tickets_status_id_board_id_fkey" FOREIGN KEY ("status_id", "board_id") REFERENCES "board_columns"("id", "board_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tickets" ADD CONSTRAINT "tickets_reporter_id_fkey" FOREIGN KEY ("reporter_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

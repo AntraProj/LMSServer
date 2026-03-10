@@ -47,6 +47,7 @@ model User {
   ticketComments TicketComment[]
   ticketHistories TicketHistory[] @relation("UpdatedHistories")
   uploadedAttachments    Attachment[]
+  workflows Workflow[]
 
   @@map("users")
 }
@@ -62,7 +63,7 @@ model Role {
 
 model Resource {
   id               Int               @id @default(autoincrement()) @map("id")
-  name             String?           @map("name")
+  name             String            @unique @map("name")
   rolePermissions RolePermission[]
 
   @@map("resources")
@@ -83,11 +84,14 @@ model RolePermission {
 model Project {
   id           Int             @id @default(autoincrement()) @map("id")
   key          String          @unique @map("key")
-  name         String?         @map("name")
+  name         String         @map("name")
+  nextTicketNumber Int             @default(1) @map("next_ticket_number")
+  workflowId      Int?     @map("workflow_id")
   createdBy   Int             @map("created_by")
   createdAt   DateTime        @default(now()) @map("created_at")
 
   creator      User            @relation("ProjectsCreated", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  workflow        Workflow? @relation(fields: [workflowId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   projectUsers ProjectUser[]
   boards       Board[]
   tickets      Ticket[]
@@ -110,6 +114,35 @@ model ProjectUser {
   @@map("project_users")
 }
 
+model Workflow {
+  id          Int      @id @default(autoincrement()) @map("id")
+  name        String  @map("name")
+  createdBy   Int?     @map("created_by") // null = system workflow
+  isStandard  Boolean  @default(false)  @map("is_standard")
+
+  creator     User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  columns     WorkflowColumn[]
+  projects    Project[]
+
+  @@unique([name, createdBy])
+  @@map("workflows")
+}
+
+model WorkflowColumn {
+  id          Int      @id @default(autoincrement()) @map("id")
+  workflowId  Int      @map("workflow_id")
+  columnName        String  @map("column_name")
+  position    Int    @map("position")
+
+  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([workflowId, position])
+  @@unique([workflowId, columnName])
+
+  @@map("workflow_columns")
+}
+
 model Board {
   id           Int         @id @default(autoincrement()) @map("id")
   projectId   Int         @map("project_id")
@@ -130,14 +163,15 @@ model Board {
 model BoardColumn {
   id        Int     @id @default(autoincrement()) @map("id")
   boardId  Int     @map("board_id")
-  name      String  @map("name")
+  columnName      String  @map("column_name")
   position  Int     @map("position")
 
   board     Board   @relation(fields: [boardId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   tickets   Ticket[]
 
   @@unique([boardId, position])
-  @@unique([boardId, name])
+  @@unique([boardId, columnName])
+  @@unique([id, boardId])
   @@map("board_columns")
 }
 
@@ -145,7 +179,7 @@ model BoardColumn {
 model Sprint {
   id         Int          @id @default(autoincrement()) @map("id")
   boardId   Int          @map("board_id")
-  name       String?      @map("name")
+  name       String      @map("name")
   status     SprintStatus @map("status")
   startDate DateTime?    @map("start_date")
   endDate   DateTime?    @map("end_date")
@@ -156,6 +190,7 @@ model Sprint {
   tickets    Ticket[]
 
   @@index([boardId])
+  @@index([boardId, status]) 
 
   @@map("sprints")
 }
@@ -202,7 +237,7 @@ model Ticket {
   sprint        Sprint?     @relation(fields: [sprintId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   type          TicketType  @relation(fields: [typeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   priority      Priority    @relation(fields: [priorityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  status        BoardColumn @relation(fields: [statusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  status        BoardColumn @relation(fields: [statusId, boardId], references: [id, boardId], onDelete: Restrict, onUpdate: Cascade)
   reporter      User        @relation("ReportedTickets", fields: [reporterId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   assignee      User?       @relation("AssignedTickets", fields: [assigneeId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   parent        Ticket?     @relation("SubTasks", fields: [parentTicketId], references: [id], onDelete: SetNull, onUpdate: Cascade)
@@ -221,6 +256,9 @@ model Ticket {
   @@index([assigneeId])
   @@index([reporterId])
   @@index([parentTicketId])
+  @@index([boardId, statusId])
+  @@index([projectId, statusId])    
+  @@index([boardId, sprintId])
 
   @@map("tickets")
 }
@@ -257,7 +295,7 @@ model TicketComment {
   ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   user       User     @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  @@index([ticketId])
+  @@index([ticketId, createdAt])
 
   @@map("ticket_comments")
 }
@@ -275,7 +313,7 @@ model TicketHistory {
   ticket     Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   user       User   @relation("UpdatedHistories", fields: [updatedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  @@index([ticketId])
+  @@index([ticketId, createdAt])
 
   @@map("ticket_history")
 }
@@ -287,7 +325,7 @@ model Attachment {
   uploadedBy Int     @map("uploaded_by")
   fileUrl   String   @map("file_url")
   fileName  String   @map("file_name")
-  fileSize  Int      @map("file_size")
+  fileSize  BigInt      @map("file_size")
   mimeType  String   @map("mime_type")
   createdAt DateTime @default(now()) @map("created_at")
 
