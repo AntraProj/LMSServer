@@ -1,23 +1,21 @@
-import 'dotenv/config';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, BoardType, SprintStatus, TicketAction } from '@prisma/client';
+import { BoardType, SprintStatus, TicketAction } from '@prisma/client';
+import prisma from '../../src/lib/prisma.js';
+import { env } from '../../src/config/env.js';
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
 
 async function main() {
 
   // Guard — fail immediately if required env vars are missing
-  if (!process.env.DATABASE_URL) {
+  if (!env.databaseUrl) {
     throw new Error('DATABASE_URL environment variable is not set');
   }
-  if (!process.env.ADMIN_EMAIL) {
+  if (!env.adminEmail) {
     throw new Error('ADMIN_EMAIL environment variable is not set');
   }
-  if (!process.env.ADMIN_PASSWORD_HASH) {
+  if (!env.adminPasswordHash) {
     throw new Error('ADMIN_PASSWORD_HASH environment variable is not set');
   }
-  if (!process.env.ADMIN_FULL_NAME) {
+  if (!env.adminFullName) {
     throw new Error('ADMIN_FULL_NAME environment variable is not set');
   }
 
@@ -92,23 +90,23 @@ async function main() {
 
     // -------------------- 4. Users --------------------
     await tx.user.upsert({
-      where: { email: process.env.ADMIN_EMAIL },
+      where: { email: env.adminEmail },
       update: {
         roleId: adminRole.id,
-        fullName: process.env.ADMIN_FULL_NAME,
-        passwordHash: process.env.ADMIN_PASSWORD_HASH,
+        fullName: env.adminFullName,
+        passwordHash: env.adminPasswordHash,
       },
       create: {
         roleId: adminRole.id,
-        email: process.env.ADMIN_EMAIL,
-        passwordHash: process.env.ADMIN_PASSWORD_HASH,
-        fullName: process.env.ADMIN_FULL_NAME,
+        email: env.adminEmail,
+        passwordHash: env.adminPasswordHash,
+        fullName: env.adminFullName,
       },
     });
 
     const trainerUser = await tx.user.upsert({
       where: { email: 'trainer@example.com' },
-      update: { roleId: trainerRole.id, fullName: 'Trainer User', passwordHash: 'TrainerHashedPassword' },
+      update: { roleId: trainerRole.id, fullName: 'Trainer User', passwordHash: '$2a$12$ZTbbALuhN.fQgAtnfI8E0uwu9s/lD42X3cu12oKIgyA83VHVHPuBu' },
       create: {
         roleId: trainerRole.id,
         email: 'trainer@example.com',
@@ -119,7 +117,7 @@ async function main() {
 
     const studentUser = await tx.user.upsert({
       where: { email: 'student@example.com' },
-      update: { roleId: studentRole.id, fullName: 'Student User', passwordHash: 'StudentHashedPassword' },
+      update: { roleId: studentRole.id, fullName: 'Student User', passwordHash: '$2a$12$YMc9GKyv583qxVXN54aow.u5fmIVGqx2Q9Lf.I8VX7YXXO7aFqYtC' },
       create: {
         roleId: studentRole.id,
         email: 'student@example.com',
