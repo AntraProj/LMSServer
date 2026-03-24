@@ -1,11 +1,11 @@
-import express from 'express';
+import express from "express";
 import authRoute from "./routes/auth.route.js";
-import cors from 'cors';
-import helmet from 'helmet';
-import { AppError } from './utils/AppError.js';
-import { requestLogger } from './middlewares/requestLogger.middleware.js';
-import { errorHandler } from './middlewares/error.middleware.js';
-import { corsOptions } from './config/cors.js';
+import cors from "cors";
+import helmet from "helmet";
+import { AppError } from "./utils/AppError.js";
+import { requestLogger } from "./middlewares/requestLogger.middleware.js";
+import { errorHandler } from "./middlewares/error.middleware.js";
+import { corsOptions } from "./config/cors.js";
 
 const app = express();
 
@@ -31,8 +31,8 @@ app.get("/", (req, res) => {
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 // Excluded from request logs (see requestLogger.js skip option)
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
 });
 
 // ─── Routes ───────────────────────────────────────────────────────────────────

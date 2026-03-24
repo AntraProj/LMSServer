@@ -1,56 +1,56 @@
-import { BoardType, SprintStatus, TicketAction } from '@prisma/client';
-import prisma from '../../src/lib/prisma.js';
-import { env } from '../../src/config/env.js';
+import { BoardType, SprintStatus, TicketAction } from "@prisma/client";
+import prisma from "../../src/lib/prisma.js";
+import { env } from "../../src/config/env.js";
 
 
 async function main() {
 
   // Guard — fail immediately if required env vars are missing
   if (!env.databaseUrl) {
-    throw new Error('DATABASE_URL environment variable is not set');
+    throw new Error("DATABASE_URL environment variable is not set");
   }
   if (!env.adminEmail) {
-    throw new Error('ADMIN_EMAIL environment variable is not set');
+    throw new Error("ADMIN_EMAIL environment variable is not set");
   }
   if (!env.adminPasswordHash) {
-    throw new Error('ADMIN_PASSWORD_HASH environment variable is not set');
+    throw new Error("ADMIN_PASSWORD_HASH environment variable is not set");
   }
   if (!env.adminFullName) {
-    throw new Error('ADMIN_FULL_NAME environment variable is not set');
+    throw new Error("ADMIN_FULL_NAME environment variable is not set");
   }
 
   await prisma.$transaction(async (tx) => {
 
     // -------------------- 1. Roles --------------------
     const adminRole = await tx.role.upsert({
-      where: { name: 'Admin' },
+      where: { name: "Admin" },
       update: {},
-      create: { name: 'Admin' },
+      create: { name: "Admin" },
     });
 
     const trainerRole = await tx.role.upsert({
-      where: { name: 'Trainer' },
+      where: { name: "Trainer" },
       update: {},
-      create: { name: 'Trainer' },
+      create: { name: "Trainer" },
     });
 
     const studentRole = await tx.role.upsert({
-      where: { name: 'Student' },
+      where: { name: "Student" },
       update: {},
-      create: { name: 'Student' },
+      create: { name: "Student" },
     });
 
     // -------------------- 2. Resources --------------------
     const createProjectResource = await tx.resource.upsert({
-      where: { name: 'Create Project' },
+      where: { name: "Create Project" },
       update: {},
-      create: { name: 'Create Project' },
+      create: { name: "Create Project" },
     });
 
     const manageTicketResource = await tx.resource.upsert({
-      where: { name: 'Manage Ticket' },
+      where: { name: "Manage Ticket" },
       update: {},
-      create: { name: 'Manage Ticket' },
+      create: { name: "Manage Ticket" },
     });
 
     // -------------------- 3. Role Permissions --------------------
@@ -105,24 +105,24 @@ async function main() {
     });
 
     const trainerUser = await tx.user.upsert({
-      where: { email: 'trainer@example.com' },
-      update: { roleId: trainerRole.id, fullName: 'Trainer User', passwordHash: '$2a$12$ZTbbALuhN.fQgAtnfI8E0uwu9s/lD42X3cu12oKIgyA83VHVHPuBu' },
+      where: { email: "trainer@example.com" },
+      update: { roleId: trainerRole.id, fullName: "Trainer User", passwordHash: "$2a$12$ZTbbALuhN.fQgAtnfI8E0uwu9s/lD42X3cu12oKIgyA83VHVHPuBu" },
       create: {
         roleId: trainerRole.id,
-        email: 'trainer@example.com',
-        passwordHash: '$2a$12$ZTbbALuhN.fQgAtnfI8E0uwu9s/lD42X3cu12oKIgyA83VHVHPuBu', //// bcrypt hash for "TrainerPassword123"
-        fullName: 'Trainer User',
+        email: "trainer@example.com",
+        passwordHash: "$2a$12$ZTbbALuhN.fQgAtnfI8E0uwu9s/lD42X3cu12oKIgyA83VHVHPuBu", //// bcrypt hash for "TrainerPassword123"
+        fullName: "Trainer User",
       },
     });
 
     const studentUser = await tx.user.upsert({
-      where: { email: 'student@example.com' },
-      update: { roleId: studentRole.id, fullName: 'Student User', passwordHash: '$2a$12$YMc9GKyv583qxVXN54aow.u5fmIVGqx2Q9Lf.I8VX7YXXO7aFqYtC' },
+      where: { email: "student@example.com" },
+      update: { roleId: studentRole.id, fullName: "Student User", passwordHash: "$2a$12$YMc9GKyv583qxVXN54aow.u5fmIVGqx2Q9Lf.I8VX7YXXO7aFqYtC" },
       create: {
         roleId: studentRole.id,
-        email: 'student@example.com',
-        passwordHash: '$2a$12$YMc9GKyv583qxVXN54aow.u5fmIVGqx2Q9Lf.I8VX7YXXO7aFqYtC', // bcrypt hash for "StudentPassword123"
-        fullName: 'Student User',
+        email: "student@example.com",
+        passwordHash: "$2a$12$YMc9GKyv583qxVXN54aow.u5fmIVGqx2Q9Lf.I8VX7YXXO7aFqYtC", // bcrypt hash for "StudentPassword123"
+        fullName: "Student User",
       },
     });
 
@@ -130,12 +130,12 @@ async function main() {
     // Note: ensure this partial unique index exists in your migration:
     //   CREATE UNIQUE INDEX workflows_system_name_unique ON workflows (name) WHERE created_by IS NULL;
     const existingWorkflow = await tx.workflow.findFirst({
-      where: { name: 'Default Scrum Workflow', createdBy: null },
+      where: { name: "Default Scrum Workflow", createdBy: null },
     });
 
     const workflow = existingWorkflow ?? await tx.workflow.create({
       data: {
-        name: 'Default Scrum Workflow',
+        name: "Default Scrum Workflow",
         createdBy: null,
         isStandard: true,
       },
@@ -143,9 +143,9 @@ async function main() {
 
     // -------------------- 6. Workflow Columns (template) --------------------
     const workflowColumnData = [
-      { columnName: 'To Do', position: 1 },
-      { columnName: 'In Progress', position: 2 },
-      { columnName: 'Done', position: 3 },
+      { columnName: "To Do", position: 1 },
+      { columnName: "In Progress", position: 2 },
+      { columnName: "Done", position: 3 },
     ];
 
     for (const col of workflowColumnData) {
@@ -159,11 +159,11 @@ async function main() {
     // -------------------- 7. Project --------------------
     // Only trainers can create projects
     const project = await tx.project.upsert({
-      where: { key: 'PROJECT' },
-      update: { name: 'React Project 1', workflowId: workflow.id },
+      where: { key: "PROJECT" },
+      update: { name: "React Project 1", workflowId: workflow.id },
       create: {
-        key: 'PROJECT',
-        name: 'React Project 1',
+        key: "PROJECT",
+        name: "React Project 1",
         createdBy: trainerUser.id,
         workflowId: workflow.id,
         nextTicketNumber: 1,
@@ -194,15 +194,15 @@ async function main() {
       data: {
         projectId: project.id,
         type: BoardType.SCRUM,
-        name: 'Scrum Board',
+        name: "Scrum Board",
       },
     });
 
     // -------------------- 10. Board Columns (copied from workflow template) --------------------
     const boardColumnData = [
-      { columnName: 'To Do', position: 1 },
-      { columnName: 'In Progress', position: 2 },
-      { columnName: 'Done', position: 3 },
+      { columnName: "To Do", position: 1 },
+      { columnName: "In Progress", position: 2 },
+      { columnName: "Done", position: 3 },
     ];
 
     const boardColumns = {};
@@ -218,13 +218,13 @@ async function main() {
 
     // -------------------- 11. Sprint --------------------
     const existingSprint = await tx.sprint.findFirst({
-      where: { boardId: board.id, name: 'Sprint 1' },
+      where: { boardId: board.id, name: "Sprint 1" },
     });
 
     const sprint = existingSprint ?? await tx.sprint.create({
       data: {
         boardId: board.id,
-        name: 'Sprint 1',
+        name: "Sprint 1",
         status: SprintStatus.ACTIVE,
         startDate: new Date(),
         endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -233,46 +233,46 @@ async function main() {
 
     // -------------------- 12. Ticket Types --------------------
     const bugType = await tx.ticketType.upsert({
-      where: { name: 'Bug' },
+      where: { name: "Bug" },
       update: {},
-      create: { name: 'Bug' },
+      create: { name: "Bug" },
     });
 
     await tx.ticketType.upsert({
-      where: { name: 'Story' },
+      where: { name: "Story" },
       update: {},
-      create: { name: 'Story' },
+      create: { name: "Story" },
     });
 
     await tx.ticketType.upsert({
-      where: { name: 'Task' },
+      where: { name: "Task" },
       update: {},
-      create: { name: 'Task' },
+      create: { name: "Task" },
     });
 
     // -------------------- 13. Priorities --------------------
     await tx.priority.upsert({
-      where: { name: 'Critical' },
+      where: { name: "Critical" },
       update: {},
-      create: { name: 'Critical' },
+      create: { name: "Critical" },
     });
 
     const highPriority = await tx.priority.upsert({
-      where: { name: 'High' },
+      where: { name: "High" },
       update: {},
-      create: { name: 'High' },
+      create: { name: "High" },
     });
 
     await tx.priority.upsert({
-      where: { name: 'Medium' },
+      where: { name: "Medium" },
       update: {},
-      create: { name: 'Medium' },
+      create: { name: "Medium" },
     });
 
     await tx.priority.upsert({
-      where: { name: 'Low' },
+      where: { name: "Low" },
       update: {},
-      create: { name: 'Low' },
+      create: { name: "Low" },
     });
 
     // -------------------- 14. Ticket --------------------
@@ -282,9 +282,9 @@ async function main() {
         boardId: board.id,
         sprintId: sprint.id,
         typeId: bugType.id,
-        statusId: boardColumns['To Do'].id,
-        title: 'Fix UI Bug',
-        description: 'UI is not responsive on mobile devices',
+        statusId: boardColumns["To Do"].id,
+        title: "Fix UI Bug",
+        description: "UI is not responsive on mobile devices",
         priorityId: highPriority.id,
         reporterId: studentUser.id,
         assigneeId: null,
@@ -299,9 +299,9 @@ async function main() {
         sprintId: sprint.id,
         parentTicketId: null,
         typeId: bugType.id,
-        statusId: boardColumns['To Do'].id,
-        title: 'Fix UI Bug',
-        description: 'UI is not responsive on mobile devices',
+        statusId: boardColumns["To Do"].id,
+        title: "Fix UI Bug",
+        description: "UI is not responsive on mobile devices",
         priorityId: highPriority.id,
         reporterId: studentUser.id,
         assigneeId: null,
@@ -313,9 +313,9 @@ async function main() {
 
     // -------------------- 15. Label --------------------
     const label = await tx.label.upsert({
-      where: { name: 'UI Design' },
+      where: { name: "UI Design" },
       update: {},
-      create: { name: 'UI Design' },
+      create: { name: "UI Design" },
     });
 
     // -------------------- 16. Ticket Label --------------------
@@ -327,7 +327,7 @@ async function main() {
 
     // -------------------- 17. Ticket Comment --------------------
     const existingComment = await tx.ticketComment.findFirst({
-      where: { ticketId: ticket.id, userId: studentUser.id, message: 'UI bug noticed on mobile view.' },
+      where: { ticketId: ticket.id, userId: studentUser.id, message: "UI bug noticed on mobile view." },
     });
 
     if (!existingComment) {
@@ -335,7 +335,7 @@ async function main() {
         data: {
           ticketId: ticket.id,
           userId: studentUser.id,
-          message: 'UI bug noticed on mobile view.',
+          message: "UI bug noticed on mobile view.",
         },
       });
     }
@@ -351,7 +351,7 @@ async function main() {
           ticketId: ticket.id,
           action: TicketAction.CREATED,
           oldValue: null,
-          newValue: { title: 'Fix UI Bug', status: 'To Do' },
+          newValue: { title: "Fix UI Bug", status: "To Do" },
           updatedBy: studentUser.id,
         },
       });
@@ -359,7 +359,7 @@ async function main() {
 
     // -------------------- 19. Attachment --------------------
     const existingAttachment = await tx.attachment.findFirst({
-      where: { ticketId: ticket.id, fileName: 'bug-snapshot.png' },
+      where: { ticketId: ticket.id, fileName: "bug-snapshot.png" },
     });
 
     if (!existingAttachment) {
@@ -367,10 +367,10 @@ async function main() {
         data: {
           ticketId: ticket.id,
           uploadedBy: studentUser.id,
-          fileUrl: 'https://example.com/screenshot.png',
-          fileName: 'bug-snapshot.png',
+          fileUrl: "https://example.com/screenshot.png",
+          fileName: "bug-snapshot.png",
           fileSize: BigInt(245 * 1024),
-          mimeType: 'image/png',
+          mimeType: "image/png",
         },
       });
     }
@@ -379,12 +379,12 @@ async function main() {
     timeout: 30000,
   });
 
-  console.log('🌱 Seed completed successfully');
+  console.log("🌱 Seed completed successfully");
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed, all changes rolled back:', e);
+    console.error("❌ Seed failed, all changes rolled back:", e);
     process.exit(1);
   })
   .finally(async () => {

@@ -21,16 +21,16 @@
 //   throw new AppError("Invalid credentials", 401);
 
 export class AppError extends Error {
-    constructor(message, statusCode) {
-        super(message);
+  constructor(message, statusCode) {
+    super(message);
 
-        this.statusCode = statusCode;
-        this.status = `${statusCode}`.startsWith("4") ? "fail" : "error";
+    this.statusCode = statusCode;
+    this.status = `${statusCode}`.startsWith("4") ? "fail" : "error";
 
-        // Flag to distinguish operational errors from programmer bugs
-        this.isOperational = true;
+    // Flag to distinguish operational errors from programmer bugs
+    this.isOperational = true;
 
-        // Captures a clean stack trace that excludes the constructor call itself
-        Error.captureStackTrace(this, this.constructor);
-    }
+    // Captures a clean stack trace that excludes the constructor call itself
+    Error.captureStackTrace(this, this.constructor);
+  }
 }

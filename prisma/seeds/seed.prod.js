@@ -1,19 +1,19 @@
-import prisma from '../../src/lib/prisma.js';
-import { env } from '../../src/config/env.js';
+import prisma from "../../src/lib/prisma.js";
+import { env } from "../../src/config/env.js";
 
 async function main() {
   // Guard — fail immediately if required env vars are missing
   if (!env.databaseUrl) {
-    throw new Error('DATABASE_URL environment variable is not set');
+    throw new Error("DATABASE_URL environment variable is not set");
   }
   if (!env.adminEmail) {
-    throw new Error('ADMIN_EMAIL environment variable is not set');
+    throw new Error("ADMIN_EMAIL environment variable is not set");
   }
   if (!env.adminPasswordHash) {
-    throw new Error('ADMIN_PASSWORD_HASH environment variable is not set');
+    throw new Error("ADMIN_PASSWORD_HASH environment variable is not set");
   }
   if (!env.adminFullName) {
-    throw new Error('ADMIN_FULL_NAME environment variable is not set');
+    throw new Error("ADMIN_FULL_NAME environment variable is not set");
   }
 
   await prisma.$transaction(

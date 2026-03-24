@@ -12,9 +12,9 @@ import { isDev } from "../config/env.js";
 // "combined" is the Apache standard format — widely supported by log analysis tools
 
 export const requestLogger = morgan(isDev ? "dev" : "combined", {
-    stream: morganStream,
+  stream: morganStream,
 
-    // Skip logging health check endpoints — they're called every few seconds
-    // by load balancers and create noise in your logs
-    skip: (req) => req.originalUrl === "/health" || req.originalUrl === "/ping",
+  // Skip logging health check endpoints — they're called every few seconds
+  // by load balancers and create noise in your logs
+  skip: (req) => req.originalUrl === "/health" || req.originalUrl === "/ping",
 });
