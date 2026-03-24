@@ -1,28 +1,52 @@
-import express from "express";
+import express from 'express';
 import authRoute from "./routes/auth.route.js";
-import "dotenv/config";
+import cors from 'cors';
+import helmet from 'helmet';
+import { AppError } from './utils/AppError.js';
+import { requestLogger } from './middlewares/requestLogger.middleware.js';
+import { errorHandler } from './middlewares/error.middleware.js';
+import { corsOptions } from './config/cors.js';
 
 const app = express();
 
+
+// ─── Security ─────────────────────────────────────────────────────────────────
+app.use(helmet());
+
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+// Must be before all routes
+app.use(cors(corsOptions));
+
+// ─── HTTP Request Logging ─────────────────────────────────────────────────────
+// Morgan → Winston — logs every request automatically
+app.use(requestLogger);
+
+// ─── Body Parsing ─────────────────────────────────────────────────────────────
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
   res.send("LMS Backend running! Use /health for status.");
 });
 
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+// ─── Health Check ─────────────────────────────────────────────────────────────
+// Excluded from request logs (see requestLogger.js skip option)
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
 });
 
-app.get("/api/hello", (req, res) => {
-  res.json({ message: "Hello Express!" });
+// ─── Routes ───────────────────────────────────────────────────────────────────
+// Register your API routes here, e.g.:
+
+// ─── 404 Handler ──────────────────────────────────────────────────────────────
+// Catches requests to routes that don't exist
+app.all("{*splat}", (req, res, next) => {
+  next(new AppError(`Route ${req.method} ${req.originalUrl} not found.`, 404));
 });
 
-app.post("/api/echo", (req, res) => {
-  res.json({
-    received: req.body,
-  });
-});
+// ─── Global Error Handler ─────────────────────────────────────────────────────
+// MUST be last — after all routes and middleware
+app.use(errorHandler);
 
 app.use("/api", authRoute);
 

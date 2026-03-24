@@ -1,13 +1,14 @@
 import { execSync } from 'child_process';
+import { env, isProd } from "../src/config/env.js";
 
-const env = process.env.NODE_ENV;
+const nodeEnv = env.nodeEnv;
 
-if (!env) {
+if (!nodeEnv) {
     console.error('❌ NODE_ENV is not set. Please set it to "production" or "development"');
     process.exit(1);
 }
 
-if (env === 'production') {
+if (isProd) {
     console.log('🚀 Running production seed...');
     execSync('node prisma/seeds/seed.prod.js', { stdio: 'inherit' });
 } else {
