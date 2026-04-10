@@ -53,5 +53,4 @@ app.all("{*splat}", (req, res, next) => {
 // MUST be last — after all routes and middleware
 app.use(errorHandler);
 
-
 export default app;
