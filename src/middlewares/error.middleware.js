@@ -95,21 +95,21 @@ export const errorHandler = (err, req, res, next) => {
   let error = err;
 
   // Prisma errors
-  if (err.constructor?.name === constants.PrismaClientKnownRequestError) {
+  if (err.constructor?.name === constants.PRISMA_CLIENT_KNOWN_REQUEST_ERROR) {
     error = handlePrismaError(err);
   }
 
   // Prisma validation errors (e.g. passing a string where an int is expected)
-  if (err.constructor?.name === constants.PrismaClientValidationError) {
+  if (err.constructor?.name === constants.PRISMA_CLIENT_VALIDATION_ERROR) {
     error = new AppError("Invalid data provided.", 400);
   }
 
   // JWT errors (from jsonwebtoken package)
-  if (err.name === constants.JsonWebTokenError) error = handleJWTError();
-  if (err.name === constants.TokenExpiredError) error = handleJWTExpiredError();
+  if (err.name === constants.JSON_WEB_TOKEN_ERROR) error = handleJWTError();
+  if (err.name === constants.TOKEN_EXPIRED_ERROR) error = handleJWTExpiredError();
 
   // Malformed JSON body — Express throws this when body-parser fails
-  if (err.type === constants.entityParseFailed) {
+  if (err.type === constants.ENTITY_PARSE_FAILED) {
     error = new AppError("Invalid JSON in request body.", 400);
   }
 

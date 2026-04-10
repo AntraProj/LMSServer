@@ -1,37 +1,29 @@
-import { loginUser, signUpUser } from "../services/auth.service.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { authService } from "../services/auth.service.js";
 
-export async function signUp(req, res) {
-  try {
-    const { email, password, fullName } = req.body;
-    if (!email || !password || !fullName) {
-      return res.status(400).json({
-        message: "All fields are required!",
-      });
-    }
-    const result = await signUpUser({ email, password, fullName });
-    return res.status(result.staus).json(result.data);
-  } catch (error) {
-    return res.status(500).json({
-      message: "Could not able to creat a User!",
-    });
-  }
-}
+// POST /api/auth/signup
+export const signup = asyncHandler(async (req, res) => {
+  const { fullName, email, password } = req.body;
 
-export async function login(req, res) {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "All fields are required!",
-      });
-    }
+  const user = await authService.signup({ fullName, email, password });
 
-    const result = await loginUser({ email, password });
+  res.status(201).json({
+    success: true,
+    message: "Account created successfully.",
+    user
+  });
+});
 
-    return res.status(result.status).json(result.data);
-  } catch (error) {
-    return res.status(500).json({
-      message: "Could not login user!",
-    });
-  }
-}
+// POST /api/auth/login
+export const login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  const {token, user} = await authService.login({ email, password });
+
+  res.status(200).json({
+    success: true,
+    message: "Logged in successfully.",
+    token,
+    user
+  });
+});
